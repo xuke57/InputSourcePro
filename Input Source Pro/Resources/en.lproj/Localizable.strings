@@ -129,6 +129,11 @@
 "Punctuation" = "Punctuation";
 "ASCII Punctuation" = "ASCII Punctuation";
 "Force English Punctuation" = "Force English Punctuation";
+"Markdown Mode" = "Markdown Mode";
+"Enable Markdown Mode" = "Enable Markdown Mode";
+"Markdown Mode Description" = "While using a CJK input source, replace ·, ¥, 》, 【, and 】 with `, $, >, [, and ]. Typing 《 inserts the complete 《》 pair; other punctuation is unchanged.";
+"Markdown Mode Disabled for Safety" = "Markdown Mode was disabled for safety";
+"Markdown Mode Disabled Description" = "Check Input Monitoring and Accessibility permissions, and quit other Input Source Pro instances before trying again.";
 "Use Function Keys" = "Use Function Keys (F1, F2, etc.)";
 "Use Media Keys" = "Use Media Keys (brightness, volume, etc.)";
 "Use Global Setting" = "Use Global Setting";

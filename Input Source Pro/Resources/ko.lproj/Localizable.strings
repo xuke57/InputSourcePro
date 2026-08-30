@@ -129,6 +129,11 @@
 "Punctuation" = "구두점";
 "ASCII Punctuation" = "ASCII 구두점";
 "Force English Punctuation" = "영어 구두점 강제 사용";
+"Markdown Mode" = "Markdown 모드";
+"Enable Markdown Mode" = "Markdown 모드 활성화";
+"Markdown Mode Description" = "CJK 입력기를 사용할 때 ·, ¥, 》, 【, 】를 `, $, >, [, ]로 바꾸고 《 입력 시 《》 쌍을 완성합니다. 다른 문장 부호는 바꾸지 않습니다.";
+"Markdown Mode Disabled for Safety" = "안전을 위해 Markdown 모드를 비활성화했습니다";
+"Markdown Mode Disabled Description" = "입력 모니터링 및 손쉬운 사용 권한을 확인하고 다른 Input Source Pro 인스턴스를 종료한 후 다시 시도하세요.";
 "Use Function Keys" = "기능 키 사용 (F1, F2 등)";
 "Use Media Keys" = "미디어 키 사용 (밝기, 음량 등)";
 "Use Global Setting" = "전역 설정 사용";

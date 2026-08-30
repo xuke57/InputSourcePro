@@ -29,6 +29,9 @@ final class IndicatorVM: ObservableObject {
     @Published
     private(set) var state: State
 
+    @Published
+    private(set) var isMarkdownModeSafetyWarningVisible = false
+
     var actionSubject = PassthroughSubject<Action, Never>()
 
     var refreshShortcutSubject = PassthroughSubject<Void, Never>()
@@ -82,7 +85,7 @@ final class IndicatorVM: ObservableObject {
 
         clearAppKeyboardCacheIfNeed()
         watchState()
-        watchPunctuationRules()
+        watchMarkdownMode()
         watchFunctionKeyMode()
     }
 
@@ -106,16 +109,33 @@ final class IndicatorVM: ObservableObject {
             .store(in: cancelBag)
     }
 
-    private func watchPunctuationRules() {
-        applicationVM.$appKind
-            .compactMap { $0 }
-            .sink { [weak self] appKind in
+    private func watchMarkdownMode() {
+        punctuationService.onSafetyShutdown = { [weak self, weak preferencesVM] reason in
+            self?.logger.debug { "Markdown mode safety shutdown: \(reason)" }
+            self?.isMarkdownModeSafetyWarningVisible = true
+            preferencesVM?.update { $0.isMarkdownModeEnabled = false }
+        }
+
+        Publishers.CombineLatest(
+            preferencesVM.$preferences
+                .map(\.isMarkdownModeEnabled)
+                .removeDuplicates(),
+            applicationVM.$appKind.compactMap { $0 }
+        )
+            .sink { [weak self] isMarkdownModeEnabled, appKind in
                 guard let self = self else { return }
-                
-                let app = appKind.getApp()
-                if self.punctuationService.shouldEnableForApp(app) {
-                    self.logger.debug { "Enabling English punctuation for app: \(app.localizedName ?? app.bundleIdentifier ?? "Unknown")" }
-                    self.punctuationService.enable()
+
+                if isMarkdownModeEnabled {
+                    self.logger.debug { "Enabling Markdown mode globally" }
+                    if !self.punctuationService.enable(mode: .markdown) {
+                        self.isMarkdownModeSafetyWarningVisible = true
+                        self.preferencesVM.update { $0.isMarkdownModeEnabled = false }
+                    } else {
+                        self.isMarkdownModeSafetyWarningVisible = false
+                    }
+                } else if self.punctuationService.shouldEnableForApp(appKind.getApp()) {
+                    self.logger.debug { "Enabling English punctuation for app rule" }
+                    self.punctuationService.enable(mode: .appEnglish)
                 } else {
                     self.punctuationService.disable()
                 }

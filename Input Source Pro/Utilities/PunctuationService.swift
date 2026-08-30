@@ -6,18 +6,27 @@ import os
 
 @MainActor
 class PunctuationService: ObservableObject {
+    enum Mode: Equatable {
+        case appEnglish
+        case markdown
+    }
+
     private let logger = ISPLogger(category: String(describing: PunctuationService.self))
+    private let generatedEventMarker: Int64 = 0x4953_504D_44
+    private let maximumHandlerDuration: TimeInterval = 0.05
     
     private var isEnabled = false
     private var eventTap: CFMachPort?
+    private var mode = Mode.appEnglish
     private weak var preferencesVM: PreferencesVM?
+    var onSafetyShutdown: ((String) -> Void)?
     
     // Performance optimization: Cache input source state to reduce system calls
     private var cachedInputSource: InputSource?
     private var inputSourceCacheTime: TimeInterval = 0
     private let inputSourceCacheTimeout: TimeInterval = 0.5 // Cache for 500ms
     
-    private let cjkvToEnglishPunctuationMap: [UInt16: (normal: String?, shifted: String?)] = [
+    private let appEnglishPunctuationMap: [UInt16: (normal: String?, shifted: String?)] = [
         UInt16(kVK_ANSI_Grave): ("`", "~"),
         UInt16(kVK_ANSI_4): (nil, "$"),
         UInt16(kVK_ANSI_6): (nil, "^"),
@@ -30,7 +39,25 @@ class PunctuationService: ObservableObject {
         UInt16(kVK_ANSI_LeftBracket): ("[", "{"),
         UInt16(kVK_ANSI_RightBracket): ("]", "}")
     ]
-    
+
+    private let markdownPunctuationMap: [UInt16: (normal: String?, shifted: String?)] = [
+        UInt16(kVK_ANSI_Grave): ("`", nil),
+        UInt16(kVK_ANSI_4): (nil, "$"),
+        UInt16(kVK_ANSI_Comma): (nil, "《》"),
+        UInt16(kVK_ANSI_Period): (nil, ">"),
+        UInt16(kVK_ANSI_LeftBracket): ("[", nil),
+        UInt16(kVK_ANSI_RightBracket): ("]", nil)
+    ]
+
+    private var punctuationReplacementMap: [UInt16: (normal: String?, shifted: String?)] {
+        switch mode {
+        case .appEnglish:
+            return appEnglishPunctuationMap
+        case .markdown:
+            return markdownPunctuationMap
+        }
+    }
+
     init(preferencesVM: PreferencesVM) {
         self.preferencesVM = preferencesVM
     }
@@ -44,8 +71,24 @@ class PunctuationService: ObservableObject {
         }
     }
     
-    func enable() {
-        guard !isEnabled else { return }
+    @discardableResult
+    func enable(mode: Mode) -> Bool {
+        if mode == .markdown {
+            guard PermissionsVM.checkInputMonitoring(prompt: false),
+                  PermissionsVM.checkAccessibility(prompt: false)
+            else {
+                logger.debug { "Refusing to enable Markdown mode without required permissions" }
+                return false
+            }
+
+            guard !hasAnotherInputSourceProInstance else {
+                logger.debug { "Refusing to enable Markdown mode while another Input Source Pro instance is running" }
+                return false
+            }
+        }
+
+        self.mode = mode
+        guard !isEnabled else { return true }
         
         let hasPermission = PermissionsVM.checkInputMonitoring(prompt: false)
         
@@ -67,6 +110,8 @@ class PunctuationService: ObservableObject {
             logger.debug { "Failed to start English punctuation service - Input Monitoring permission required" }
             // Service will remain disabled until next enable() call or permission state change
         }
+
+        return success
     }
     
     func disable() {
@@ -152,6 +197,11 @@ class PunctuationService: ObservableObject {
     }
     
     private func handleKeyEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent> {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            scheduleSafetyShutdown(reason: "The keyboard event tap was disabled by macOS")
+            return Unmanaged.passUnretained(event)
+        }
+
         // Handle event tap being disabled (can happen if permissions are revoked)
         guard isEnabled else {
             return Unmanaged.passUnretained(event)
@@ -160,11 +210,23 @@ class PunctuationService: ObservableObject {
         guard type == .keyDown else {
             return Unmanaged.passUnretained(event)
         }
+
+        guard event.getIntegerValueField(.eventSourceUserData) != generatedEventMarker else {
+            return Unmanaged.passUnretained(event)
+        }
+
+        let handlerStartTime = CACurrentMediaTime()
+        defer {
+            let duration = CACurrentMediaTime() - handlerStartTime
+            if duration > maximumHandlerDuration {
+                scheduleSafetyShutdown(reason: "Keyboard event handling exceeded the safety limit")
+            }
+        }
         
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
         
         // Check if this is a punctuation key we want to intercept
-        guard let mapping = cjkvToEnglishPunctuationMap[UInt16(keyCode)] else {
+        guard let mapping = punctuationReplacementMap[UInt16(keyCode)] else {
             // Not a punctuation key we're interested in
             return Unmanaged.passUnretained(event)
         }
@@ -215,6 +277,7 @@ class PunctuationService: ObservableObject {
         
         // Copy relevant properties from the original event (but not flags to avoid modifier conflicts)
         newEvent.timestamp = originalEvent.timestamp
+        newEvent.setIntegerValueField(.eventSourceUserData, value: generatedEventMarker)
         
         // Explicitly set flags to none to ensure clean character input
         newEvent.flags = []
@@ -229,13 +292,36 @@ class PunctuationService: ObservableObject {
         return flags.intersection(shortcutModifiers).isEmpty
     }
 
+    private var hasAnotherInputSourceProInstance: Bool {
+        let knownBundleIdentifiers = [
+            "com.runjuu.Input-Source-Pro",
+            "com.runjuu.Input-Source-Pro.Markdown"
+        ]
+
+        return knownBundleIdentifiers
+            .flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0) }
+            .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier && !$0.isTerminated }
+    }
+
+    private func scheduleSafetyShutdown(reason: String) {
+        guard isEnabled else { return }
+        isEnabled = false
+        logger.debug { "Disabling punctuation service for safety: \(reason)" }
+
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.stopMonitoring()
+            self.onSafetyShutdown?(reason)
+        }
+    }
+
     func shouldEnableForApp(_ app: NSRunningApplication) -> Bool {
         guard let preferencesVM = preferencesVM else { return false }
-        
+
         let appRule = preferencesVM.getAppCustomization(app: app)
         return appRule?.shouldForceEnglishPunctuation == true
     }
-    
+
     /// Get current input source with caching to improve performance during rapid typing
     private func getCachedCurrentInputSource() -> InputSource {
         let currentTime = CACurrentMediaTime()
@@ -269,7 +355,7 @@ class PunctuationService: ObservableObject {
             - CGEvent Permission Check: \(permissionViaCGEvent ? "✅ Passed" : "❌ Failed")  
             - Accessibility Permission: \(accessibilityEnabled ? "✅ Granted" : "❌ Denied")
             - Current Input Source: \(currentInputSource.name) (CJKV: \(currentInputSource.isCJKVR))
-            - Monitored Keys: \(cjkvToEnglishPunctuationMap.map { "\($0.key)→'\($0.value.normal ?? "pass")'/'\($0.value.shifted ?? "pass")'" }.joined(separator: ", "))
+            - Monitored Keys: \(punctuationReplacementMap.map { "\($0.key)→'\($0.value.normal ?? "pass")'/'\($0.value.shifted ?? "pass")'" }.joined(separator: ", "))
             """ }
     }
 }

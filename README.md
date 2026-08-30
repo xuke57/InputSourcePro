@@ -57,9 +57,9 @@
 - Customizable and designed to stay out of your way.
 
 ### ✍️ App-Aware Punctuation Modes
-Keep punctuation consistent across different languages by enabling **Force English Punctuation** for specific apps.
-- Automatically types standard symbols (`` ` ~ - _ $ ^ , . ; ' " [ ] ``) even when your current input source would normally produce localized or full-width characters.
-- Enable it only for the apps where you need it, such as code editors or terminal windows.
+This customized build adds an opt-in **Markdown Mode** that keeps selected punctuation consistent across all apps.
+- Automatically replaces `·` with `` ` ``, `¥` with `$`, `》` with `>`, and `【】` with `[]`. Since the right book-title mark is replaced, typing `《` inserts the complete `《》` pair. Chinese prose punctuation, including localized quotation marks, remains unchanged.
+- Turn on **Markdown Mode** in General settings, then optionally enable **Launch at Login** to apply it automatically after signing in.
 
 ### 🎛️ App-Based Function Key Switching
 Automatically switch your macOS function key mode per app.

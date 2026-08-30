@@ -131,6 +131,11 @@
 "Punctuation" = "標點符號";
 "ASCII Punctuation" = "ASCII 標點符號";
 "Force English Punctuation" = "強制使用英文標點符號";
+"Markdown Mode" = "Markdown 模式";
+"Enable Markdown Mode" = "啟用 Markdown 模式";
+"Markdown Mode Description" = "使用中文輸入法時，將 ·、¥、》、【、】替換為 `、$、>、[、]；輸入《時補全為《》，其他標點維持不變。";
+"Markdown Mode Disabled for Safety" = "Markdown 模式已基於安全考量關閉";
+"Markdown Mode Disabled Description" = "請檢查輸入監控與輔助使用權限，並結束其他 Input Source Pro 實例後再試。";
 "Use Function Keys" = "使用功能鍵 (F1、F2 等)";
 "Use Media Keys" = "使用媒體鍵 (亮度、音量等)";
 "Use Global Setting" = "使用全域設定";

@@ -129,6 +129,11 @@
 "Punctuation" = "句読点";
 "ASCII Punctuation" = "ASCII 句読点";
 "Force English Punctuation" = "英語句読点を強制使用";
+"Markdown Mode" = "Markdown モード";
+"Enable Markdown Mode" = "Markdown モードを有効にする";
+"Markdown Mode Description" = "CJK 入力中は ·、¥、》、【、】を `、$、>、[、] に置換し、《を入力すると《》を補完します。その他の句読点は変更しません。";
+"Markdown Mode Disabled for Safety" = "安全のため Markdown モードを無効にしました";
+"Markdown Mode Disabled Description" = "入力監視とアクセシビリティの権限を確認し、他の Input Source Pro を終了してから再試行してください。";
 "Use Function Keys" = "ファンクションキーを使用 (F1、F2 など)";
 "Use Media Keys" = "メディアキーを使用 (明るさ、音量など)";
 "Use Global Setting" = "グローバル設定を使用";
