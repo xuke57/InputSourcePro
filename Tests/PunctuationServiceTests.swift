@@ -15,6 +15,7 @@ final class PunctuationServiceTests: XCTestCase {
         var invalidatedTaps = 0
         var time: TimeInterval = 0
         var timeStep: TimeInterval = 0
+        var inputContext: MarkdownPunctuationMapping.InputContext?
 
         @MainActor
         func makeService() -> PunctuationService {
@@ -27,12 +28,43 @@ final class PunctuationServiceTests: XCTestCase {
                 self.createdTaps += 1
                 return PunctuationService.EventTap { self.invalidatedTaps += 1 }
             }
-            dependencies.markdownInputContext = { nil }
+            dependencies.markdownInputContext = { self.inputContext }
             dependencies.now = {
                 defer { self.time += self.timeStep }
                 return self.time
             }
             return PunctuationService(dependencies: dependencies)
+        }
+    }
+
+    func testMarkdownUsesEachEventsKeyboardType() throws {
+        let environment = Environment()
+        environment.inputContext = .init(
+            sourceID: "com.apple.inputmethod.SCIM.ITABC",
+            inputModeID: "com.apple.inputmethod.SCIM.ITABC",
+            keyboardLayoutID: "com.apple.keylayout.PinyinKeyboard"
+        )
+        let service = environment.makeService()
+        try service.enable(mode: .markdown).get()
+        let keyEvent = try event()
+        keyEvent.setIntegerValueField(.keyboardEventKeycode, value: Int64(kVK_ANSI_RightBracket))
+
+        for (keyboardType, expected): (Int64, String) in [(40, "]"), (42, "["), (41, "]")] {
+            keyEvent.setIntegerValueField(.keyboardEventKeyboardType, value: keyboardType)
+            let handled = service.handleKeyEvent(type: .keyDown, event: keyEvent)
+            guard handled.takeUnretainedValue() !== keyEvent else {
+                XCTFail("Expected a replacement for keyboard type \(keyboardType)")
+                continue
+            }
+            let replacement = handled.takeRetainedValue()
+            var length = 0
+            var characters = [UniChar](repeating: 0, count: 8)
+            replacement.keyboardGetUnicodeString(
+                maxStringLength: characters.count,
+                actualStringLength: &length,
+                unicodeString: &characters
+            )
+            XCTAssertEqual(String(utf16CodeUnits: characters, count: length), expected)
         }
     }
 

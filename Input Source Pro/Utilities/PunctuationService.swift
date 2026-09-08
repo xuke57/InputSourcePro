@@ -184,6 +184,7 @@ final class PunctuationService: ObservableObject {
             replacement = MarkdownPunctuationMapping.replacement(
                 for: keyCode,
                 flags: event.flags,
+                keyboardType: event.getIntegerValueField(.keyboardEventKeyboardType),
                 contextProvider: dependencies.markdownInputContext
             )
         case .appEnglish:

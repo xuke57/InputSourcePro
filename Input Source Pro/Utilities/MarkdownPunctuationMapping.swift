@@ -19,17 +19,36 @@ enum MarkdownPunctuationMapping {
         CGKeyCode(kVK_ANSI_Grave): ("`", nil),
         CGKeyCode(kVK_ANSI_4): (nil, "$"),
         CGKeyCode(kVK_ANSI_Comma): (nil, "《》"),
-        CGKeyCode(kVK_ANSI_Period): (nil, ">"),
+        CGKeyCode(kVK_ANSI_Period): (nil, ">")
+    ]
+
+    private static let ansiBrackets: [CGKeyCode: (normal: String?, shifted: String?)] = [
         CGKeyCode(kVK_ANSI_LeftBracket): ("[", nil),
         CGKeyCode(kVK_ANSI_RightBracket): ("]", nil)
+    ]
+
+    private static let jisBrackets: [CGKeyCode: (normal: String?, shifted: String?)] = [
+        CGKeyCode(kVK_ANSI_RightBracket): ("[", nil),
+        CGKeyCode(kVK_ANSI_Backslash): ("]", nil)
     ]
 
     static func replacement(
         for keyCode: CGKeyCode,
         flags: CGEventFlags,
+        keyboardType: Int64,
         contextProvider: () -> InputContext? = currentInputContext
     ) -> String? {
-        guard let mapping = replacements[keyCode] else { return nil }
+        guard let keyboardType = Int16(exactly: keyboardType) else { return nil }
+        let brackets: [CGKeyCode: (normal: String?, shifted: String?)]
+        switch KBGetLayoutType(keyboardType) {
+        case OSType(kKeyboardANSI), OSType(kKeyboardISO):
+            brackets = ansiBrackets
+        case OSType(kKeyboardJIS):
+            brackets = jisBrackets
+        default:
+            return nil
+        }
+        guard let mapping = replacements[keyCode] ?? brackets[keyCode] else { return nil }
 
         let preservedModifiers: CGEventFlags = [
             .maskCommand, .maskControl, .maskAlternate, .maskSecondaryFn, .maskAlphaShift

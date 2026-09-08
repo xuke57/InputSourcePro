@@ -20,7 +20,7 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
         (CGKeyCode(kVK_ANSI_RightBracket), [], "]")
     ]
 
-    func testMapsOnlySpecifiedKeysOnSupportedPinyinLayouts() {
+    func testANSIAndISOMapOnlySpecifiedKeysOnSupportedPinyinLayouts() {
         for layoutID in ["com.apple.keylayout.PinyinKeyboard", "com.apple.keylayout.ABC", "com.apple.keylayout.US"] {
             let context = InputContext(
                 sourceID: pinyin.sourceID,
@@ -28,12 +28,62 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
                 keyboardLayoutID: layoutID
             )
 
+            for keyboardType: Int64 in [40, 41] {
+                for key in mappedKeys {
+                    XCTAssertEqual(
+                        MarkdownPunctuationMapping.replacement(
+                            for: key.keyCode, flags: key.flags, keyboardType: keyboardType
+                        ) { context },
+                        key.replacement,
+                        "Layout: \(layoutID), keyboard: \(keyboardType), key: \(key.keyCode)"
+                    )
+                }
+                XCTAssertNil(MarkdownPunctuationMapping.replacement(
+                    for: CGKeyCode(kVK_ANSI_Backslash), flags: [], keyboardType: keyboardType
+                ) { context })
+            }
+        }
+    }
+
+    func testJISMapsItsBracketKeysAndPreservesAtSign() {
+        let jisKeys = Array(mappedKeys.prefix(4)) + [
+            (CGKeyCode(kVK_ANSI_RightBracket), [], "["),
+            (CGKeyCode(kVK_ANSI_Backslash), [], "]")
+        ]
+        for layoutID in ["com.apple.keylayout.PinyinKeyboard", "com.apple.keylayout.ABC", "com.apple.keylayout.US"] {
+            let context = InputContext(
+                sourceID: pinyin.sourceID,
+                inputModeID: pinyin.inputModeID,
+                keyboardLayoutID: layoutID
+            )
+            for key in jisKeys {
+                XCTAssertEqual(MarkdownPunctuationMapping.replacement(
+                    for: key.keyCode, flags: key.flags, keyboardType: 42
+                ) { context }, key.replacement)
+            }
+            XCTAssertNil(MarkdownPunctuationMapping.replacement(
+                for: CGKeyCode(kVK_ANSI_LeftBracket), flags: [], keyboardType: 42
+            ) { context })
+        }
+    }
+
+    func testKeyboardChangesTakeEffectOnTheNextKey() {
+        for (keyboardType, expected): (Int64, String) in [(40, "]"), (42, "["), (41, "]"), (42, "[")] {
+            XCTAssertEqual(MarkdownPunctuationMapping.replacement(
+                for: CGKeyCode(kVK_ANSI_RightBracket), flags: [], keyboardType: keyboardType
+            ) { self.pinyin }, expected)
+        }
+    }
+
+    func testUnknownAndOutOfRangeKeyboardTypesPassThrough() {
+        for keyboardType: Int64 in [0, 255, -1, Int64.max] {
             for key in mappedKeys {
-                XCTAssertEqual(
-                    MarkdownPunctuationMapping.replacement(for: key.keyCode, flags: key.flags) { context },
-                    key.replacement,
-                    "Layout: \(layoutID), key: \(key.keyCode)"
-                )
+                XCTAssertNil(MarkdownPunctuationMapping.replacement(
+                    for: key.keyCode, flags: key.flags, keyboardType: keyboardType
+                ) {
+                    XCTFail("Unknown keyboard must not query the input source")
+                    return self.pinyin
+                })
             }
         }
     }
@@ -42,7 +92,7 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
         for sourceID in ["com.apple.keylayout.Russian", "com.apple.keylayout.RussianWin"] {
             let context = InputContext(sourceID: sourceID, inputModeID: nil, keyboardLayoutID: sourceID)
             for key in mappedKeys {
-                XCTAssertNil(MarkdownPunctuationMapping.replacement(for: key.keyCode, flags: key.flags) { context })
+                XCTAssertNil(MarkdownPunctuationMapping.replacement(for: key.keyCode, flags: key.flags, keyboardType: 40) { context })
             }
         }
     }
@@ -51,7 +101,7 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
         for sourceID in ["com.apple.keylayout.ABC", "com.apple.keylayout.US"] {
             let context = InputContext(sourceID: sourceID, inputModeID: nil, keyboardLayoutID: sourceID)
             for key in mappedKeys {
-                XCTAssertNil(MarkdownPunctuationMapping.replacement(for: key.keyCode, flags: key.flags) { context })
+                XCTAssertNil(MarkdownPunctuationMapping.replacement(for: key.keyCode, flags: key.flags, keyboardType: 40) { context })
             }
         }
     }
@@ -69,7 +119,7 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
         ]
 
         for context in contexts {
-            XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift) { context })
+            XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40) { context })
         }
     }
 
@@ -80,7 +130,7 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
                 inputModeID: pinyin.inputModeID,
                 keyboardLayoutID: layoutID
             )
-            XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift) { context })
+            XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40) { context })
         }
     }
 
@@ -94,14 +144,14 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
         }
 
         XCTAssertEqual(
-            MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, contextProvider: provider),
+            MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40, contextProvider: provider),
             "《》"
         )
         context = latin
-        XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, contextProvider: provider))
+        XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40, contextProvider: provider))
         context = pinyin
         XCTAssertEqual(
-            MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, contextProvider: provider),
+            MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40, contextProvider: provider),
             "《》"
         )
         XCTAssertEqual(contextReads, 3)
@@ -109,10 +159,10 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
 
     func testUnderlyingLayoutChangesTakeEffectOnTheNextKey() {
         var context = pinyin
-        XCTAssertEqual(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift) { context }, "《》")
+        XCTAssertEqual(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40) { context }, "《》")
 
         context = InputContext(sourceID: pinyin.sourceID, inputModeID: pinyin.inputModeID, keyboardLayoutID: "custom.layout")
-        XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift) { context })
+        XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40) { context })
     }
 
     func testOtherPunctuationAndShiftVariantsPassThroughWithoutReadingTheInputSource() {
@@ -130,7 +180,7 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
         ]
 
         for (keyCode, flags) in keys {
-            XCTAssertNil(MarkdownPunctuationMapping.replacement(for: keyCode, flags: flags) {
+            XCTAssertNil(MarkdownPunctuationMapping.replacement(for: keyCode, flags: flags, keyboardType: 40) {
                 XCTFail("Unmapped key must not query the input source")
                 return self.pinyin
             })
@@ -139,17 +189,30 @@ final class MarkdownPunctuationMappingTests: XCTestCase {
 
     func testShortcutsAndCapsLockPassThroughWithoutReadingTheInputSource() {
         let modifiers: [CGEventFlags] = [.maskCommand, .maskControl, .maskAlternate, .maskSecondaryFn, .maskAlphaShift]
-        for modifier in modifiers {
-            for key in mappedKeys {
-                XCTAssertNil(MarkdownPunctuationMapping.replacement(for: key.keyCode, flags: key.flags.union(modifier)) {
-                    XCTFail("Modified key must not query the input source")
-                    return self.pinyin
-                })
+        let keys = mappedKeys + [(CGKeyCode(kVK_ANSI_Backslash), [], "]")]
+        for keyboardType: Int64 in [40, 41, 42] {
+            for modifier in modifiers {
+                for key in keys {
+                    XCTAssertNil(MarkdownPunctuationMapping.replacement(
+                        for: key.keyCode, flags: key.flags.union(modifier), keyboardType: keyboardType
+                    ) {
+                        XCTFail("Modified key must not query the input source")
+                        return self.pinyin
+                    })
+                }
             }
         }
     }
 
+    func testJISShiftedBracketKeysPassThrough() {
+        for keyCode in [kVK_ANSI_RightBracket, kVK_ANSI_Backslash] {
+            XCTAssertNil(MarkdownPunctuationMapping.replacement(
+                for: CGKeyCode(keyCode), flags: .maskShift, keyboardType: 42
+            ) { self.pinyin })
+        }
+    }
+
     func testUnavailableInputContextPassesThrough() {
-        XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift) { nil })
+        XCTAssertNil(MarkdownPunctuationMapping.replacement(for: CGKeyCode(kVK_ANSI_Comma), flags: .maskShift, keyboardType: 40) { nil })
     }
 }
