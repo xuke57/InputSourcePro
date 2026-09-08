@@ -99,9 +99,6 @@ struct GeneralSettingsView: View {
                     failure: indicatorVM.markdownModeFailure
                 )
                 .onAppear { permissionsVM.refresh() }
-                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-                    permissionsVM.refresh()
-                }
                 .onChange(of: indicatorVM.markdownModeFailure) { _ in
                     permissionsVM.refresh()
                 }

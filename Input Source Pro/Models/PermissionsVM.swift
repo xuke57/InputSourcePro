@@ -25,10 +25,12 @@ final class PermissionsVM: ObservableObject {
 
     private let accessibilityCheck: @MainActor () -> Bool
     private let inputMonitoringCheck: @MainActor () -> Bool
+    private var activationSubscription: AnyCancellable?
 
     init(
         accessibilityCheck: @escaping @MainActor () -> Bool = { PermissionsVM.checkAccessibility(prompt: false) },
-        inputMonitoringCheck: @escaping @MainActor () -> Bool = { PermissionsVM.checkInputMonitoring(prompt: false) }
+        inputMonitoringCheck: @escaping @MainActor () -> Bool = { PermissionsVM.checkInputMonitoring(prompt: false) },
+        notificationCenter: NotificationCenter = .default
     ) {
         self.accessibilityCheck = accessibilityCheck
         self.inputMonitoringCheck = inputMonitoringCheck
@@ -36,6 +38,9 @@ final class PermissionsVM: ObservableObject {
         isInputMonitoringEnabled = inputMonitoringCheck()
         watchAccessibilityChange()
         watchInputMonitoringChange()
+        activationSubscription = notificationCenter.publisher(for: NSApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refresh() }
     }
 
     func refresh() {
