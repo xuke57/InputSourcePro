@@ -339,6 +339,14 @@ struct Preferences {
 
     fileprivate init() {}
 
+    init(markdownModeUserDefaults: UserDefaults) {
+        _isMarkdownModeEnabled = UserDefault(
+            wrappedValue: false,
+            Preferences.Key.isMarkdownModeEnabled,
+            userDefaults: markdownModeUserDefaults
+        )
+    }
+
     @UserDefault(Preferences.Key.prevInstalledBuildVersion)
     var prevInstalledBuildVersion = 0
 

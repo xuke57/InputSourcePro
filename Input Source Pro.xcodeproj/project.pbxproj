@@ -183,6 +183,7 @@
 		D60001022F20000000000102 /* AppKindComparisonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60001012F20000000000101 /* AppKindComparisonTests.swift */; };
 		C13120191255119A7A95E7C2 /* MarkdownPunctuationMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = C131A22D5FAE13E5E9F14E9F /* MarkdownPunctuationMapping.swift */; };
 		C1315059B7754D59E9CFFAD6 /* MarkdownPunctuationMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13142E5127B2ED3F334E51A /* MarkdownPunctuationMappingTests.swift */; };
+		C131FE642ECFD99AA25588ED /* SettingsBackupPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C131984D932C971B3780C1D0 /* SettingsBackupPreferencesTests.swift */; };
 		D60003022F20000000000302 /* ShortcutConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60003012F20000000000301 /* ShortcutConflict.swift */; };
 		D60003042F20000000000304 /* ShortcutConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60003032F20000000000303 /* ShortcutConflictTests.swift */; };
 /* End PBXBuildFile section */
@@ -384,6 +385,7 @@
 		D60001012F20000000000101 /* AppKindComparisonTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppKindComparisonTests.swift; sourceTree = "<group>"; };
 		C131A22D5FAE13E5E9F14E9F /* MarkdownPunctuationMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPunctuationMapping.swift; sourceTree = "<group>"; };
 		C13142E5127B2ED3F334E51A /* MarkdownPunctuationMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPunctuationMappingTests.swift; sourceTree = "<group>"; };
+		C131984D932C971B3780C1D0 /* SettingsBackupPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsBackupPreferencesTests.swift; sourceTree = "<group>"; };
 		D60003012F20000000000301 /* ShortcutConflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutConflict.swift; sourceTree = "<group>"; };
 		D60003032F20000000000303 /* ShortcutConflictTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutConflictTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -759,6 +761,7 @@
 		D60000042F20000000000004 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				C131984D932C971B3780C1D0 /* SettingsBackupPreferencesTests.swift */,
 				C13142E5127B2ED3F334E51A /* MarkdownPunctuationMappingTests.swift */,
 				D60001012F20000000000101 /* AppKindComparisonTests.swift */,
 				D60000512F20000000000051 /* InputSourceDeduplicationTests.swift */,
@@ -1093,6 +1096,7 @@
 				D60000322F20000000000032 /* BrowserRuleValidationTests.swift in Sources */,
 				D60000222F20000000000022 /* RuntimeRuleChangeNotifierTests.swift in Sources */,
 				C1315059B7754D59E9CFFAD6 /* MarkdownPunctuationMappingTests.swift in Sources */,
+				C131FE642ECFD99AA25588ED /* SettingsBackupPreferencesTests.swift in Sources */,
 				D60000032F20000000000003 /* TestHarnessTests.swift in Sources */,
 				D60000722F20000000000072 /* AppURLActionTests.swift in Sources */,
 				D60000822F20000000000082 /* URLActivationSuppressionTests.swift in Sources */,
