@@ -181,6 +181,8 @@
 		D60002222F20000000000222 /* SpotlightIndicatorPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60002212F20000000000221 /* SpotlightIndicatorPosition.swift */; };
 		D60002322F20000000000232 /* SpotlightIndicatorPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60002312F20000000000231 /* SpotlightIndicatorPositionTests.swift */; };
 		D60001022F20000000000102 /* AppKindComparisonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60001012F20000000000101 /* AppKindComparisonTests.swift */; };
+		C13120191255119A7A95E7C2 /* MarkdownPunctuationMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = C131A22D5FAE13E5E9F14E9F /* MarkdownPunctuationMapping.swift */; };
+		C1315059B7754D59E9CFFAD6 /* MarkdownPunctuationMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13142E5127B2ED3F334E51A /* MarkdownPunctuationMappingTests.swift */; };
 		D60003022F20000000000302 /* ShortcutConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60003012F20000000000301 /* ShortcutConflict.swift */; };
 		D60003042F20000000000304 /* ShortcutConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60003032F20000000000303 /* ShortcutConflictTests.swift */; };
 /* End PBXBuildFile section */
@@ -380,6 +382,8 @@
 		D60002212F20000000000221 /* SpotlightIndicatorPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndicatorPosition.swift; sourceTree = "<group>"; };
 		D60002312F20000000000231 /* SpotlightIndicatorPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndicatorPositionTests.swift; sourceTree = "<group>"; };
 		D60001012F20000000000101 /* AppKindComparisonTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppKindComparisonTests.swift; sourceTree = "<group>"; };
+		C131A22D5FAE13E5E9F14E9F /* MarkdownPunctuationMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPunctuationMapping.swift; sourceTree = "<group>"; };
+		C13142E5127B2ED3F334E51A /* MarkdownPunctuationMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPunctuationMappingTests.swift; sourceTree = "<group>"; };
 		D60003012F20000000000301 /* ShortcutConflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutConflict.swift; sourceTree = "<group>"; };
 		D60003032F20000000000303 /* ShortcutConflictTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutConflictTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -498,6 +502,7 @@
 		4A2A175D280BA7FA00E13249 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				C131A22D5FAE13E5E9F14E9F /* MarkdownPunctuationMapping.swift */,
 				25C5A6B42E678D86005AB80E /* PunctuationService.swift */,
 				D598C7E228B74B16004747D1 /* Indicator */,
 				D598C7E428B74B48004747D1 /* AppKit */,
@@ -754,6 +759,7 @@
 		D60000042F20000000000004 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				C13142E5127B2ED3F334E51A /* MarkdownPunctuationMappingTests.swift */,
 				D60001012F20000000000101 /* AppKindComparisonTests.swift */,
 				D60000512F20000000000051 /* InputSourceDeduplicationTests.swift */,
 				D60000112F20000000000011 /* BrowserRuleSelectionTests.swift */,
@@ -943,6 +949,7 @@
 				4A881A93288BC55E00B76498 /* PreferencesVM+KeyboardConfig.swift in Sources */,
 				4A2A1789280BA7FA00E13249 /* TISInputSource+Extension.swift in Sources */,
 				4AC50D6B283A72810034E894 /* NSColor.swift in Sources */,
+				C13120191255119A7A95E7C2 /* MarkdownPunctuationMapping.swift in Sources */,
 				25C5A6B52E678D86005AB80E /* PunctuationService.swift in Sources */,
 				4ACC9B812D2640F70002B8CE /* AddSwitchingGroupButton.swift in Sources */,
 				4A2A178C280BA7FA00E13249 /* CancelBag.swift in Sources */,
@@ -1085,6 +1092,7 @@
 				D60000122F20000000000012 /* BrowserRuleSelectionTests.swift in Sources */,
 				D60000322F20000000000032 /* BrowserRuleValidationTests.swift in Sources */,
 				D60000222F20000000000022 /* RuntimeRuleChangeNotifierTests.swift in Sources */,
+				C1315059B7754D59E9CFFAD6 /* MarkdownPunctuationMappingTests.swift in Sources */,
 				D60000032F20000000000003 /* TestHarnessTests.swift in Sources */,
 				D60000722F20000000000072 /* AppURLActionTests.swift in Sources */,
 				D60000822F20000000000082 /* URLActivationSuppressionTests.swift in Sources */,

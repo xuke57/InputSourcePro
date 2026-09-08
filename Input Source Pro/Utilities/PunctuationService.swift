@@ -40,24 +40,6 @@ class PunctuationService: ObservableObject {
         UInt16(kVK_ANSI_RightBracket): ("]", "}")
     ]
 
-    private let markdownPunctuationMap: [UInt16: (normal: String?, shifted: String?)] = [
-        UInt16(kVK_ANSI_Grave): ("`", nil),
-        UInt16(kVK_ANSI_4): (nil, "$"),
-        UInt16(kVK_ANSI_Comma): (nil, "《》"),
-        UInt16(kVK_ANSI_Period): (nil, ">"),
-        UInt16(kVK_ANSI_LeftBracket): ("[", nil),
-        UInt16(kVK_ANSI_RightBracket): ("]", nil)
-    ]
-
-    private var punctuationReplacementMap: [UInt16: (normal: String?, shifted: String?)] {
-        switch mode {
-        case .appEnglish:
-            return appEnglishPunctuationMap
-        case .markdown:
-            return markdownPunctuationMap
-        }
-    }
-
     init(preferencesVM: PreferencesVM) {
         self.preferencesVM = preferencesVM
     }
@@ -224,9 +206,17 @@ class PunctuationService: ObservableObject {
         }
         
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+
+        if mode == .markdown {
+            guard let keyCode = CGKeyCode(exactly: keyCode),
+                  let replacement = MarkdownPunctuationMapping.replacement(for: keyCode, flags: event.flags),
+                  let newEvent = createEnglishPunctuationEvent(originalEvent: event, replacement: replacement)
+            else { return Unmanaged.passUnretained(event) }
+            return Unmanaged.passRetained(newEvent)
+        }
         
         // Check if this is a punctuation key we want to intercept
-        guard let mapping = punctuationReplacementMap[UInt16(keyCode)] else {
+        guard let mapping = appEnglishPunctuationMap[UInt16(keyCode)] else {
             // Not a punctuation key we're interested in
             return Unmanaged.passUnretained(event)
         }
@@ -355,7 +345,7 @@ class PunctuationService: ObservableObject {
             - CGEvent Permission Check: \(permissionViaCGEvent ? "✅ Passed" : "❌ Failed")  
             - Accessibility Permission: \(accessibilityEnabled ? "✅ Granted" : "❌ Denied")
             - Current Input Source: \(currentInputSource.name) (CJKV: \(currentInputSource.isCJKVR))
-            - Monitored Keys: \(punctuationReplacementMap.map { "\($0.key)→'\($0.value.normal ?? "pass")'/'\($0.value.shifted ?? "pass")'" }.joined(separator: ", "))
+            - Monitored Keys: \(appEnglishPunctuationMap.map { "\($0.key)→'\($0.value.normal ?? "pass")'/'\($0.value.shifted ?? "pass")'" }.joined(separator: ", "))
             """ }
     }
 }
