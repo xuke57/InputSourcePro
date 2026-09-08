@@ -14,6 +14,7 @@ final class IndicatorVM: ObservableObject {
     let inputSourceVM: InputSourceVM
     let permissionsVM: PermissionsVM
     let punctuationService: PunctuationService
+    private let markdownModeController: MarkdownModeController
 
     let logger = ISPLogger(category: String(describing: IndicatorVM.self))
 
@@ -30,7 +31,10 @@ final class IndicatorVM: ObservableObject {
     private(set) var state: State
 
     @Published
-    private(set) var isMarkdownModeSafetyWarningVisible = false
+    private(set) var isMarkdownModeEnabled = false
+
+    @Published
+    private(set) var markdownModeFailure: PunctuationService.Failure?
 
     var actionSubject = PassthroughSubject<Action, Never>()
 
@@ -75,7 +79,14 @@ final class IndicatorVM: ObservableObject {
         self.preferencesVM = preferencesVM
         self.applicationVM = applicationVM
         self.inputSourceVM = inputSourceVM
-        self.punctuationService = PunctuationService(preferencesVM: preferencesVM)
+        let punctuationService = PunctuationService()
+        self.punctuationService = punctuationService
+        self.markdownModeController = MarkdownModeController(
+            service: punctuationService,
+            shouldEnableAppEnglish: applicationVM.appKind.map {
+                preferencesVM.getAppCustomization(app: $0.getApp())?.shouldForceEnglishPunctuation == true
+            } ?? false
+        )
         state = .from(
             preferencesVM: preferencesVM,
             inputSourceChangeReason: .system,
@@ -109,36 +120,47 @@ final class IndicatorVM: ObservableObject {
             .store(in: cancelBag)
     }
 
+    func setMarkdownModeEnabled(_ enabled: Bool) {
+        markdownModeController.setEnabled(enabled)
+        permissionsVM.refresh()
+    }
+
     private func watchMarkdownMode() {
-        punctuationService.onSafetyShutdown = { [weak self, weak preferencesVM] reason in
-            self?.logger.debug { "Markdown mode safety shutdown: \(reason)" }
-            self?.isMarkdownModeSafetyWarningVisible = true
-            preferencesVM?.update { $0.isMarkdownModeEnabled = false }
-        }
+        markdownModeController.$isEnabled
+            .assign(to: &$isMarkdownModeEnabled)
+        markdownModeController.$failure
+            .assign(to: &$markdownModeFailure)
 
-        Publishers.CombineLatest(
-            preferencesVM.$preferences
-                .map(\.isMarkdownModeEnabled)
-                .removeDuplicates(),
-            applicationVM.$appKind.compactMap { $0 }
+        markdownModeController.bindPreference(
+            values: preferencesVM.$preferences.map(\.isMarkdownModeEnabled).eraseToAnyPublisher(),
+            currentValue: { [preferencesVM] in preferencesVM.preferences.isMarkdownModeEnabled },
+            update: { [preferencesVM] enabled in
+                preferencesVM.update { $0.isMarkdownModeEnabled = enabled }
+            }
         )
-            .sink { [weak self] isMarkdownModeEnabled, appKind in
-                guard let self = self else { return }
+        .store(in: cancelBag)
 
-                if isMarkdownModeEnabled {
-                    self.logger.debug { "Enabling Markdown mode globally" }
-                    if !self.punctuationService.enable(mode: .markdown) {
-                        self.isMarkdownModeSafetyWarningVisible = true
-                        self.preferencesVM.update { $0.isMarkdownModeEnabled = false }
-                    } else {
-                        self.isMarkdownModeSafetyWarningVisible = false
-                    }
-                } else if self.punctuationService.shouldEnableForApp(appKind.getApp()) {
-                    self.logger.debug { "Enabling English punctuation for app rule" }
-                    self.punctuationService.enable(mode: .appEnglish)
-                } else {
-                    self.punctuationService.disable()
-                }
+        applicationVM.$appKind
+            .sink { [weak self] appKind in
+                guard let self = self else { return }
+                let shouldEnableAppEnglish = appKind.map {
+                    self.preferencesVM.getAppCustomization(app: $0.getApp())?.shouldForceEnglishPunctuation == true
+                } ?? false
+                self.markdownModeController.appContextChanged(shouldEnableAppEnglish: shouldEnableAppEnglish)
+            }
+            .store(in: cancelBag)
+
+        Publishers.CombineLatest(permissionsVM.$isInputMonitoringEnabled, permissionsVM.$isAccessibilityEnabled)
+            .sink { [weak self] _, _ in
+                self?.markdownModeController.revalidateMarkdown()
+            }
+            .store(in: cancelBag)
+
+        NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didLaunchApplicationNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.markdownModeController.revalidateMarkdown()
             }
             .store(in: cancelBag)
     }

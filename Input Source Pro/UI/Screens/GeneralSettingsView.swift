@@ -86,57 +86,24 @@ struct GeneralSettingsView: View {
                     .padding()
                 }
 
-                SettingsSection(title: "Markdown Mode") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Toggle("", isOn: $preferencesVM.preferences.isMarkdownModeEnabled)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Enable Markdown Mode".i18n())
-                                Text("Markdown Mode Description".i18n())
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-
-                            Spacer()
+                MarkdownModeSettingsView(
+                    isEnabled: Binding(
+                        get: { indicatorVM.isMarkdownModeEnabled },
+                        set: {
+                            indicatorVM.setMarkdownModeEnabled($0)
+                            permissionsVM.refresh()
                         }
-
-                        if preferencesVM.preferences.isMarkdownModeEnabled &&
-                            (!PermissionsVM.checkInputMonitoring(prompt: false) ||
-                             !PermissionsVM.checkAccessibility(prompt: false)) {
-                            HStack {
-                                Text("This feature requires input monitoring permission to work".i18n())
-                                    .font(.subheadline)
-
-                                Spacer()
-
-                                Button("Open Permission Settings".i18n()) {
-                                    NSWorkspace.shared.openInputMonitoringPreferences()
-                                }
-
-                                Button("Open Accessibility Settings".i18n()) {
-                                    NSWorkspace.shared.openAccessibilityPreferences()
-                                }
-                            }
-                            .padding(8)
-                            .background(NSColor.background1.color)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-
-                        if indicatorVM.isMarkdownModeSafetyWarningVisible {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Markdown Mode Disabled for Safety".i18n())
-                                    .fontWeight(.medium)
-                                Text("Markdown Mode Disabled Description".i18n())
-                                    .font(.subheadline)
-                            }
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.orange.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                    .padding()
+                    ),
+                    isInputMonitoringEnabled: permissionsVM.isInputMonitoringEnabled,
+                    isAccessibilityEnabled: permissionsVM.isAccessibilityEnabled,
+                    failure: indicatorVM.markdownModeFailure
+                )
+                .onAppear { permissionsVM.refresh() }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                    permissionsVM.refresh()
+                }
+                .onChange(of: indicatorVM.markdownModeFailure) { _ in
+                    permissionsVM.refresh()
                 }
 
                 Group {
